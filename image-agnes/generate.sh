@@ -2,8 +2,8 @@
 set -euo pipefail
 
 usage() {
-    printf '用法: %s --url URL --key API_KEY --model MODEL --prompt PROMPT [--platform local|openclaw|hermes] [--output OUTPUT_PATH] [--output-dir DIR] [--metadata METADATA_PATH]\n' "$0"
-    printf '也可通过 IMAGE_API_URL、IMAGE_API_KEY、IMAGE_MODEL、IMAGE_PROMPT、IMAGE_PLATFORM、IMAGE_OUTPUT_PATH、IMAGE_OUTPUT_DIR、IMAGE_METADATA_PATH 环境变量传入。\n'
+    printf '用法: %s --url URL --key API_KEY --model MODEL --prompt PROMPT [--size WxH] [--platform local|openclaw|hermes] [--output OUTPUT_PATH] [--output-dir DIR] [--metadata METADATA_PATH]\n' "$0"
+    printf '也可通过 IMAGE_API_URL、IMAGE_API_KEY、IMAGE_MODEL、IMAGE_PROMPT、IMAGE_SIZE、IMAGE_PLATFORM、IMAGE_OUTPUT_PATH、IMAGE_OUTPUT_DIR、IMAGE_METADATA_PATH 环境变量传入。\n'
 }
 
 API_URL="${IMAGE_API_URL:-}"
@@ -14,6 +14,7 @@ PLATFORM="${IMAGE_PLATFORM:-local}"
 OUTPUT_PATH="${IMAGE_OUTPUT_PATH:-}"
 OUTPUT_DIR="${IMAGE_OUTPUT_DIR:-}"
 METADATA_PATH="${IMAGE_METADATA_PATH:-}"
+SIZE="${IMAGE_SIZE:-1024x1024}"
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -31,6 +32,10 @@ while [ $# -gt 0 ]; do
             ;;
         --prompt)
             PROMPT="${2:-}"
+            shift 2
+            ;;
+        --size)
+            SIZE="${2:-}"
             shift 2
             ;;
         --platform)
@@ -139,13 +144,14 @@ fi
 
 export IMAGE_MODEL="$MODEL"
 export IMAGE_PROMPT="$PROMPT"
+export IMAGE_SIZE="$SIZE"
 if [ "$JSON_RUNTIME" = "node" ]; then
     REQUEST_BODY="$(node - <<'JS'
 process.stdout.write(JSON.stringify({
     model: process.env.IMAGE_MODEL,
     prompt: process.env.IMAGE_PROMPT,
     n: 1,
-    size: "1024x1024",
+    size: process.env.IMAGE_SIZE,
 }));
 JS
 )"
@@ -158,7 +164,7 @@ print(json.dumps({
     "model": os.environ["IMAGE_MODEL"],
     "prompt": os.environ["IMAGE_PROMPT"],
     "n": 1,
-    "size": "1024x1024",
+    "size": os.environ["IMAGE_SIZE"],
 }, ensure_ascii=False))
 PY
 )"
@@ -219,6 +225,7 @@ process.stdout.write(JSON.stringify({
     endpoint: process.env.IMAGE_ENDPOINT,
     output_path: process.env.IMAGE_OUTPUT_PATH,
     remote_url: process.env.IMAGE_REMOTE_URL,
+    size: process.env.IMAGE_SIZE,
 }, null, 2));
 JS
 else
@@ -232,6 +239,7 @@ print(json.dumps({
     "endpoint": os.environ["IMAGE_ENDPOINT"],
     "output_path": os.environ["IMAGE_OUTPUT_PATH"],
     "remote_url": os.environ["IMAGE_REMOTE_URL"],
+    "size": os.environ["IMAGE_SIZE"],
 }, ensure_ascii=False, indent=2))
 PY
 fi
