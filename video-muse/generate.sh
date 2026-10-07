@@ -338,6 +338,16 @@ OUTPUT_DIRNAME="$(dirname "$OUTPUT_PATH")"
 METADATA_DIRNAME="$(dirname "$METADATA_PATH")"
 mkdir -p "$OUTPUT_DIRNAME" "$METADATA_DIRNAME"
 
+# 接口可能返回相对路径（如 /v1/media/xxx.mp4），补全为完整 URL
+case "$FINAL_VIDEO_URL" in
+    http://*|https://*) ;;
+    /*)
+        ORIGIN="$(printf '%s' "$API_URL" | sed -E 's#^(https?://[^/]+).*#\1#')"
+        FINAL_VIDEO_URL="${ORIGIN}${FINAL_VIDEO_URL}"
+        printf '检测到相对路径视频地址，已补全为: %s\n' "$FINAL_VIDEO_URL" >&2
+        ;;
+esac
+
 printf '开始下载视频到: %s\n' "$OUTPUT_PATH" >&2
 curl -sS -L "$FINAL_VIDEO_URL" -o "$OUTPUT_PATH"
 
