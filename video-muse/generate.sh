@@ -2,8 +2,8 @@
 set -euo pipefail
 
 usage() {
-    printf '用法: %s --url URL --key API_KEY --model MODEL --prompt PROMPT [--platform local|openclaw|hermes] [--output OUTPUT_PATH] [--output-dir DIR] [--metadata METADATA_PATH]\n' "$0"
-    printf '也可通过 VIDEO_API_URL、VIDEO_API_KEY、VIDEO_MODEL、VIDEO_PROMPT、VIDEO_PLATFORM、VIDEO_OUTPUT_PATH、VIDEO_OUTPUT_DIR、VIDEO_METADATA_PATH 环境变量传入。\n'
+    printf '用法: %s --url URL --key API_KEY --model MODEL --prompt PROMPT [--platform local|openclaw|hermes] [--output OUTPUT_PATH] [--output-dir DIR] [--metadata METADATA_PATH] [--size WxH]\n' "$0"
+    printf '也可通过 VIDEO_API_URL、VIDEO_API_KEY、VIDEO_MODEL、VIDEO_PROMPT、VIDEO_PLATFORM、VIDEO_OUTPUT_PATH、VIDEO_OUTPUT_DIR、VIDEO_METADATA_PATH、VIDEO_WIDTH、VIDEO_HEIGHT 环境变量传入。\n'
 }
 
 API_URL="${VIDEO_API_URL:-}"
@@ -53,6 +53,16 @@ while [ $# -gt 0 ]; do
             ;;
         --metadata)
             METADATA_PATH="${2:-}"
+            shift 2
+            ;;
+        --size)
+            SIZE_VALUE="${2:-}"
+            if ! [[ "$SIZE_VALUE" =~ ^[0-9]+x[0-9]+$ ]]; then
+                printf '错误: --size 格式应为 WxH（纯数字），例如 1920x1080。\n' >&2
+                exit 1
+            fi
+            VIDEO_WIDTH="${SIZE_VALUE%x*}"
+            VIDEO_HEIGHT="${SIZE_VALUE#*x}"
             shift 2
             ;;
         -h|--help)
@@ -368,6 +378,8 @@ process.stdout.write(JSON.stringify({
     platform: process.env.VIDEO_PLATFORM_NAME,
     model: process.env.VIDEO_MODEL,
     endpoint: process.env.VIDEO_ENDPOINT,
+    width: parseInt(process.env.VIDEO_WIDTH || "1152", 10),
+    height: parseInt(process.env.VIDEO_HEIGHT || "768", 10),
     output_path: process.env.VIDEO_OUTPUT_PATH,
     remote_url: process.env.VIDEO_REMOTE_URL,
 }, null, 2));
@@ -381,6 +393,8 @@ print(json.dumps({
     "platform": os.environ["VIDEO_PLATFORM_NAME"],
     "model": os.environ["VIDEO_MODEL"],
     "endpoint": os.environ["VIDEO_ENDPOINT"],
+    "width": int(os.environ.get("VIDEO_WIDTH", "1152")),
+    "height": int(os.environ.get("VIDEO_HEIGHT", "768")),
     "output_path": os.environ["VIDEO_OUTPUT_PATH"],
     "remote_url": os.environ["VIDEO_REMOTE_URL"],
 }, ensure_ascii=False, indent=2))
